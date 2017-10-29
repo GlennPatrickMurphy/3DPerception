@@ -49,12 +49,12 @@ def send_to_yaml(yaml_filename, dict_list):
 # Callback function for your Point Cloud Subscriber
 def pcl_callback(pcl_msg):
 
-# Exercise-2 TODOs:
 
-    # TODO: Convert ROS msg to PCL data
+
+    # Convert ROS msg to PCL data
     cloud =ros_to_pcl(pcl_msg) #ros_cloud(PointCloud2) 
    
-    # TODO: Statistical Outlier Filtering
+    # Statistical Outlier Filtering
 
     # Much like the previous filters, we start by creating a filter object: 
     outlier_filter = cloud.make_statistical_outlier_filter()
@@ -71,7 +71,7 @@ def pcl_callback(pcl_msg):
     # Finally call the filter function for magic
     cloud = outlier_filter.filter()
 
-    # TODO: Voxel Grid Downsampling
+    # Voxel Grid Downsampling
     # Create a VoxelGrid filter object for our input point cloud
     vox = cloud.make_voxel_grid_filter()
 
@@ -84,7 +84,7 @@ def pcl_callback(pcl_msg):
     # Call the filter function to obtain the resultant downsampled point cloud
     cloud_filtered = vox.filter()
 
-    # TODO: PassThrough Filter
+    # PassThrough Filter
     passthrough = cloud_filtered.make_passthrough_filter()
 
     # Assign axis and range to the passthrough filter object.
@@ -97,7 +97,7 @@ def pcl_callback(pcl_msg):
     # Finally use the filter function to obtain the resultant point cloud. 
     cloud_filtered = passthrough.filter()
 
-    # TODO: RANSAC Plane Segmentation
+    #  RANSAC Plane Segmentation
     # Create the segmentation object
     seg = cloud_filtered.make_segmenter()
 
@@ -110,12 +110,12 @@ def pcl_callback(pcl_msg):
     # Call the segment function to obtain set of inlier indices and model coefficients
     inliers, coefficients = seg.segment()
 
-    # TODO: Extract inliers and outliers
+    # Extract inliers and outliers
 
     extracted_inliers = cloud_filtered.extract(inliers, negative=False)
     extracted_outliers = cloud_filtered.extract(inliers, negative=True)
 
-    # TODO: Euclidean Clustering
+    
 
   # Euclidean Clustering
     white_cloud = XYZRGB_to_XYZ(extracted_outliers)# Apply function to convert XYZRGB to XYZ
@@ -134,7 +134,7 @@ def pcl_callback(pcl_msg):
     # Extract indices for each of the discovered clusters
     cluster_indices = ec.Extract()
 
-    # TODO: Create Cluster-Mask Point Cloud to visualize each cluster separately
+    # Create Cluster-Mask Point Cloud to visualize each cluster separately
     
     #Assign a color corresponding to each segmented object in scene
     cluster_color = get_color_list(len(cluster_indices))
@@ -153,17 +153,17 @@ def pcl_callback(pcl_msg):
     cluster_cloud.from_list(color_cluster_point_list)
     ros_cluster_cloud = pcl_to_ros(cluster_cloud)
 
-    # TODO: Convert PCL data to ROS messages
+    #  Convert PCL data to ROS messages
     
     ros_cloud_objects = pcl_to_ros(extracted_outliers)
     ros_cloud_table = pcl_to_ros(extracted_inliers)
 
-    # TODO: Publish ROS messages
+    #  Publish ROS messages
     pcl_objects_pub.publish(ros_cloud_objects)
     pcl_table_pub.publish(ros_cloud_table)
     pcl_cluster_pub.publish(ros_cluster_cloud)
 
-# Exercise-3 TODOs: 
+
 
     # Classify the clusters! (loop through each detected cluster one at a time)
     detected_objects_labels = []
@@ -172,10 +172,10 @@ def pcl_callback(pcl_msg):
     for index, pts_list in enumerate(cluster_indices):
         # Grab the points for the cluster from the extracted outliers (cloud_objects)
         pcl_cluster = extracted_outliers.extract(pts_list)
-        # TODO: convert the cluster from pcl to ROS using helper function
+        # convert the cluster from pcl to ROS using helper function
 	ros_cluster=pcl_to_ros(pcl_cluster)
         # Extract histogram features
-        # TODO: complete this step just as is covered in capture_features.py
+        # complete this step just as is covered in capture_features.py
         chists = compute_color_histograms(ros_cluster, using_hsv=True)
         normals = get_normals(ros_cluster)
         nhists = compute_normal_histograms(normals)
@@ -214,13 +214,13 @@ def pcl_callback(pcl_msg):
 # function to load parameters and request PickPlace service
 def pr2_mover(object_list):
    
-    # TODO: Initialize variables
+    # Initialize variables
     dict_list=[]
-    # TODO: Get/Read parameters
+    # Get/Read parameters
     object_list_param = rospy.get_param('/object_list')
     dropboxes = rospy.get_param('/dropbox')
 
-    # TODO: Parse parameters into individual variables
+    # Parse parameters into individual variables
     object_group = {}
     for object_param in object_list_param:
 	object_group[object_param['name']] = object_param['group']
@@ -229,42 +229,40 @@ def pr2_mover(object_list):
     for dropbox in dropboxes:
 	dropbox_group[dropbox['group']] = dropbox
 	
-    # TODO: Rotate PR2 in place to capture side tables for the collision map
+    # Rotate PR2 in place to capture side tables for the collision map
 
-    # TODO: Loop through the pick list
+    # Loop through the pick list
     labels = []
     centroids = [] # to be list of tuples (x, y, z)
     for object in object_list:
     	points_arr = ros_to_pcl(object.cloud).to_array()
+	# Get the PointCloud for a given object and obtain it's centroid
     	centroid=np.mean(points_arr, axis=0)[:3]
 	pick_pose=Pose()
 	pick_pose.position.x = float(centroid[0])
         pick_pose.position.y = float(centroid[1])
 	pick_pose.position.z = float(centroid[2])
-
+	
+	#  Create 'place_pose' for the object
 	place_pose = Pose()
         place_position = dropbox_group.get(object_group.get(object.label, 'unknown'), {}).get('position', [0, 0, 0])
         place_pose.position.x = place_position[0]
         place_pose.position.y = place_position[1]
 	place_pose.position.z = place_position[2]
 
+	#Assign Object name
 	object_name = String()
 	object_name.data = str(object.label)
 
+	#Assing Test Scene
         test_scene_num = Int32()
         test_scene_num.data = 1
 
+        # Assign the arm to be used for pick_place
         arm_name = String()
         arm_name.data = dropbox_group.get(object_group.get(object.label, 'unknown'), {}).get('name', 'unknown')
 
-
-        # TODO: Get the PointCloud for a given object and obtain it's centroid
-
-        # TODO: Create 'place_pose' for the object
-
-        # TODO: Assign the arm to be used for pick_place
-
-        # TODO: Create a list of dictionaries (made with make_yaml_dict()) for later output to yaml format
+        #  Create a list of dictionaries (made with make_yaml_dict()) for later output to yaml format
         action = make_yaml_dict(test_scene_num, object_name, arm_name, pick_pose, place_pose)
 	dict_list.append(action)
         # Wait for 'pick_place_routine' service to come up
@@ -273,7 +271,7 @@ def pr2_mover(object_list):
         try:
             pick_place_routine = rospy.ServiceProxy('pick_place_routine', PickPlace)
 	    if False:
-            	#TODO: Insert your message variables to be sent as a service request
+            	#Insert your message variables to be sent as a service request
             	resp = pick_place_routine(test_scene_num, object_name, arm_name, pick_pose, place_pose)
 
             	print ("Response: ",resp.success)
@@ -281,19 +279,19 @@ def pr2_mover(object_list):
         except rospy.ServiceException, e:
             print "Service call failed: %s"%e
 
-    # TODO: Output your request parameters into output yaml file
+    # Output your request parameters into output yaml file
     
     send_to_yaml("./output1.yaml", dict_list)
 
 if __name__ == '__main__':
 
-    # TODO: ROS node initialization
+    # ROS node initialization
     rospy.init_node('clustering',anonymous=True)
 
-    # TODO: Create Subscribers
+    # Create Subscribers
     pcl_sub=rospy.Subscriber("/pr2/world/points",pc2.PointCloud2,pcl_callback,queue_size=1)
 
-    # TODO: Create Publishers
+    # Create Publishers
     pcl_objects_pub = rospy.Publisher("/pcl_objects", PointCloud2, queue_size=1)
     pcl_table_pub = rospy.Publisher("/pcl_table", PointCloud2, queue_size=1)
     pcl_cluster_pub = rospy.Publisher("/pcl_cluster", PointCloud2, queue_size=1)
@@ -312,6 +310,6 @@ if __name__ == '__main__':
     # Initialize color_list
     get_color_list.color_list = []
 
-    # TODO: Spin while node is not shutdown
+    # Spin while node is not shutdown
     while not rospy.is_shutdown():
     	rospy.spin()
