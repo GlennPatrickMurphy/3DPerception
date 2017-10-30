@@ -15,7 +15,26 @@ and then recognized through an SVM image classifier.
 
 ## Perception Project
 
-Below are screen shots of RViz with the identifiers.
+Using  a linear svm classifier, and  setting the training set sample size in capturefeatures.py to 40, I was able to get an 86% accurate classifier
+
+### SVM Accuracy
+![Train_SvmAccuracy](https://github.com/GlennPatrickMurphy/3DPerception/blob/master/Photos/Train_SvmAccuracy.PNG)
+
+These confusion matrix show a better visualization of the classifier. The left axis was the sample and right was what the svm classifier predicted. 
+
+### Confusion Matrix 
+![ConfusionMatrix](https://github.com/GlennPatrickMurphy/3DPerception/blob/master/Photos/ConfusionMatrix.PNG)
+
+### Normalized Confusion Matrix 
+![NormalizedConfusionMatrix](https://github.com/GlennPatrickMurphy/3DPerception/blob/master/Photos/NormalizedConfusionMatrix.PNG)
+
+## Main Pipeline
+
+   The code first filters the point cloud data from the RGBD camera.  Unlike in the exercises,  the point cloud contained a level of noize that an outlier filter had to be applied. To reduce the appoint of points, a Voxel Grid Downsampling was applied. To focus on the specific object on the table a Pass Through Filter was applied. To remove the rest of the table, it was modeled as a plane and removed via RANSAC. The extracted outlier, being the objects on the table top where than clustered via Euclidean Clustering. These extracted outlier and inlier (being the table) point cloud were published ROS messages, as well as the new Euclidean Cluster Cloud. 
+
+   The code then begins to take this point cloud information and predict the objects using the already trained svm. A histogram of the clusters are created. The is catagorizing the HSV (Hue,Satruation, Value) of the cluster. HSV was selected as it is more robust with regards to different lighting situations. The histograms look at the color of the cluster and the distrubtion of surface normals to discover the shape of the object. With this information the SVM classifier makes its preditcion and publishes the ROS message.
+
+Below are screen shots of code working in RViz with the identifiers and accuracy of the SVM predicitons.
 
 ### Test World 1 100%Correctly Identified
 ![Test World 1](https://github.com/GlennPatrickMurphy/3DPerception/blob/master/Photos/FinalProjectWorld1.PNG)
