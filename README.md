@@ -51,6 +51,6 @@ Below are screen shots of code working in RViz with the identifiers and accuracy
 ### Test World 3 Side View
 ![Test World 3 Side View](https://github.com/GlennPatrickMurphy/3DPerception/blob/master/Photos/FinalProjectWorld3-2.PNG) 
 
-
+## Conclusion
 
 A problem that I had was choosing  a minimal cluster size for the Euclidean Clustering Algorithm. I found that in order to correctly recognize smaller objects I needed to pick a smaller sample size, however than the left output box would be recognized another object and then classified. With more time I could filter out that section of the point cloud, to avoid it being inncorrectly classified.
